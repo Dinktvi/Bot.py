@@ -1,0 +1,23 @@
+# systemd unit for 24/7 hosting on a VPS
+# Place at: /etc/systemd/system/tg-shop-bot.service
+# Then run:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now tg-shop-bot
+
+[Unit]
+Description=Telegram Subscription Shop Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/workspace
+EnvironmentFile=/workspace/.env
+Environment=PYTHONPATH=/workspace
+ExecStart=/usr/bin/python3 -m bot.main
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

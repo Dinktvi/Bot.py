@@ -174,3 +174,7 @@
 *.lz
 *.lzma
 *.iso
+
+# Runtime data
+**/data/
+**/assets/*.png
