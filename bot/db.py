@@ -285,7 +285,10 @@ def get_auction(lot_id):
 def place_bid(lot_id, user_id, amount):
     with _lock:
         conn = get_conn()
-        row = conn.execute("SELECT * FROM auction_items WHERE id=? AND active=1", (lot_id,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM auction_items WHERE id=? AND active=1 AND ends_at > ?",
+            (lot_id, datetime.now().isoformat()),
+        ).fetchone()
         if not row:
             conn.close()
             return "notfound"

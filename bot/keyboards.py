@@ -50,7 +50,7 @@ def periods_kb(lang, plan):
 
 def pay_kb(lang, price):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f"Оплатить {price} ⭐", pay=True)],
+        [InlineKeyboardButton(text=_("btn_pay", lang).format(price=price), pay=True)],
         [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:buy")],
     ])
 

@@ -3,12 +3,12 @@ import asyncio
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, FSInputFile
+from aiogram.types import CallbackQuery, Message
 
 from .. import config, db
 from ..i18n import _
 from ..states import AdminStates
-from ..keyboards import admin_kb, main_menu_kb
+from ..keyboards import admin_kb
 from ..runtime import bot
 
 router = Router()

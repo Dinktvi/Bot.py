@@ -2,9 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 from aiogram import Router, F
-from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, LabeledPrice, FSInputFile
 
@@ -12,7 +10,6 @@ from .. import config, db
 from ..i18n import _
 from ..states import UserPromoStates
 from ..keyboards import plans_kb, periods_kb, pay_kb, apply_discount, main_menu_kb
-from ..runtime import bot
 
 router = Router()
 
@@ -67,6 +64,7 @@ async def cb_period(cq: CallbackQuery, state: FSMContext):
         if p:
             discount = p["discount"]
             price = int(price * (100 - discount) / 100)
+    price = max(1, price)
 
     title = _("pay_title", lang, plan=_(f"plan_{plan}", lang), period=_(f"period_{period}", lang))
     desc = _("pay_desc", lang, period=_(f"period_{period}", lang))
@@ -111,8 +109,12 @@ async def on_payment(message: Message, state: FSMContext):
     lang = get_lang(message.from_user.id)
     payload = message.successful_payment.invoice_payload
     parts = payload.split(":")
-    plan = parts[0]
-    period = parts[1]
+    if len(parts) < 2 or parts[0] not in config.PRICING or parts[1] not in config.PERIOD_MONTHS:
+        await message.answer(
+            "⚠️ Не удалось распознать товар оплаты. Напиши в поддержку — тебе вернут подписку."
+        )
+        return
+    plan, period = parts[0], parts[1]
     promo = parts[2] if len(parts) > 2 else None
     months = config.PERIOD_MONTHS[period]
     price = message.successful_payment.total_amount
@@ -159,7 +161,7 @@ async def cb_promo_start(cq: CallbackQuery, state: FSMContext):
 @router.message(UserPromoStates.enter_code)
 async def on_promo_enter(message: Message, state: FSMContext):
     lang = get_lang(message.from_user.id)
-    code = message.text.strip().upper()
+    code = (message.text or "").strip().upper()
     promo = db.get_promo(code)
     if promo:
         if promo["max_uses"] > 0 and promo["uses"] >= promo["max_uses"]:

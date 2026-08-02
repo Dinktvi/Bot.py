@@ -1,10 +1,10 @@
+import asyncio
 import logging
 import sys
 from pathlib import Path
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, Command
+from aiogram import Dispatcher, F
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message, FSInputFile
@@ -99,8 +99,38 @@ async def on_startup():
     logging.info("Bot started: @%s", me.username)
 
 
+async def auction_loop():
+    await asyncio.sleep(5)
+    while True:
+        await asyncio.sleep(30)
+        try:
+            finished = db.close_expired_auctions()
+            for lot in finished:
+                bidder = lot["highest_bidder"]
+                if bidder:
+                    try:
+                        await bot.send_message(
+                            bidder,
+                            _("auction_bid_done", "ru",
+                              title=lot["title"], winner=bidder, amount=lot["current_price"]),
+                        )
+                    except Exception:
+                        pass
+                for aid in config.ADMIN_IDS:
+                    try:
+                        await bot.send_message(
+                            aid,
+                            f"🏆 Лот «{lot['title']}» завершён. Победитель: {bidder} — {lot['current_price']} ⭐",
+                        )
+                    except Exception:
+                        pass
+        except Exception as e:
+            logging.warning("auction_loop error: %s", e)
+
+
 async def main():
     dp.startup.register(on_startup)
+    asyncio.get_running_loop().create_task(auction_loop())
     await dp.start_polling(bot, skip_updates=True)
 
 

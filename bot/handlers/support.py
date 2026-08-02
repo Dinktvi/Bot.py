@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from html import escape
 from pathlib import Path
@@ -67,7 +68,7 @@ async def assistant_message(message: Message):
         await message.answer(_("assistant_need_sub", lang), reply_markup=main_menu_kb(lang))
         return
     thinking = await message.answer(_("assistant_thinking", lang))
-    answer = await llm.ask(message.text or "", lang)
+    answer = await asyncio.to_thread(llm.ask, message.text or "", lang)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=assistant_kb(lang))
@@ -116,7 +117,7 @@ async def support_message(message: Message):
         return
 
     thinking = await message.answer(_("assistant_thinking", lang))
-    answer = await llm.ask(message.text or "", lang)
+    answer = await asyncio.to_thread(llm.ask, message.text or "", lang)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=main_menu_kb(lang))
