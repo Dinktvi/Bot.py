@@ -6,8 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bot ./bot
-COPY assets ./assets
-RUN mkdir -p data
+RUN mkdir -p assets data
 
 ENV PYTHONPATH=/app
 
