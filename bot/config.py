@@ -48,5 +48,15 @@ LLM_MODEL = os.getenv("USER_LLM_MODEL", "deepseek-chat")
 BOT_NAME = "AI Helper Bot"
 SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "")
 
+BONUS_SPONSORS = [
+    {"name": "Zhirick_script", "url": "https://t.me/Zhirick_script"},
+    {"name": "volgavpnbot", "url": "https://t.me/volgavpnbot?start=_tgr_k71Coeo2YTgy"},
+    {"name": "VoxelVPNbot", "url": "https://t.me/VoxelVPNbot?start=_tgr_MP84l4c3YzIy"},
+    {"name": "pochemutak1bot", "url": "https://t.me/pochemutak1bot?start=_tgr_PyCuTBQzNmEy"},
+]
+
+BONUS_AI_REQUESTS = 7
+BONUS_FREE_DAYS = 7
+
 os.makedirs(os.path.join(os.path.dirname(__file__), "..", "data"), exist_ok=True)
 os.makedirs(ASSETS_DIR, exist_ok=True)

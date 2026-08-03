@@ -64,16 +64,25 @@ async def start_assistant(cq: CallbackQuery, state: FSMContext):
 @router.message(ChatStates.assistant)
 async def assistant_message(message: Message):
     lang = get_lang(message.from_user.id)
-    if not has_sub(message.from_user.id):
+    user_id = message.from_user.id
+    has_sub_flag = has_sub(user_id)
+    requests = db.get_ai_requests(user_id)
+    if not has_sub_flag and requests <= 0:
         await message.answer(_("assistant_need_sub", lang), reply_markup=main_menu_kb(lang))
         return
+    user_text = message.text or ""
     thinking = await message.answer(_("assistant_thinking", lang))
-    answer = await asyncio.to_thread(llm.ask, message.text or "", lang)
+    history = db.get_history(user_id)
+    answer = await asyncio.to_thread(llm.ask, user_text, lang, history)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=assistant_kb(lang))
         return
     await thinking.delete()
+    db.add_history(user_id, "user", user_text)
+    db.add_history(user_id, "assistant", answer)
+    if not has_sub_flag:
+        db.use_ai_request(user_id)
     if llm.should_escalate(answer):
         await message.answer(answer[:3500], reply_markup=escalate_kb(lang))
     else:
@@ -117,12 +126,15 @@ async def support_message(message: Message):
         return
 
     thinking = await message.answer(_("assistant_thinking", lang))
-    answer = await asyncio.to_thread(llm.ask, message.text or "", lang)
+    history = db.get_history(message.from_user.id)
+    answer = await asyncio.to_thread(llm.ask, message.text or "", lang, history)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=main_menu_kb(lang))
         return
     await thinking.delete()
+    db.add_history(message.from_user.id, "user", message.text or "")
+    db.add_history(message.from_user.id, "assistant", answer)
     if llm.should_escalate(answer):
         await notify_admins(
             message.from_user,

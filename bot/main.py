@@ -12,7 +12,7 @@ from aiogram.types import CallbackQuery, Message, FSInputFile
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from . import config, db
-from .handlers import shop, support, admin as admin_handlers, fallback
+from .handlers import shop, support, admin as admin_handlers, bonus, fallback
 from .i18n import _
 from .images import generate_all
 from .keyboards import lang_kb, main_menu_kb, start_kb
@@ -23,6 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(shop.router)
 dp.include_router(support.router)
+dp.include_router(bonus.router)
 dp.include_router(admin_handlers.router)
 dp.include_router(fallback.router)
 

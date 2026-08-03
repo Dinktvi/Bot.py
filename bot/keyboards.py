@@ -24,8 +24,9 @@ def start_kb(lang):
         [InlineKeyboardButton(text=_("btn_buy", lang), callback_data="menu:buy"),
          InlineKeyboardButton(text=_("btn_ai_start", lang), callback_data="menu:assistant")],
         [InlineKeyboardButton(text=_("btn_my_sub", lang), callback_data="menu:mysub"),
-         InlineKeyboardButton(text=_("btn_auction", lang), callback_data="menu:auction")],
-        [InlineKeyboardButton(text=_("btn_sponsors", lang), callback_data="menu:sponsors")],
+         InlineKeyboardButton(text=_("btn_bonus", lang), callback_data="menu:bonus")],
+        [InlineKeyboardButton(text=_("btn_auction", lang), callback_data="menu:auction"),
+         InlineKeyboardButton(text=_("btn_sponsors", lang), callback_data="menu:sponsors")],
         [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:main")],
     ])
 

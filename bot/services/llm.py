@@ -4,7 +4,9 @@ from .. import config
 
 SYSTEM_PROMPT = (
     "You are the AI assistant of a Telegram bot that helps users create Telegram bots, "
-    "write scenarios and scripts. Answer helpfully, concisely, in the language of the user. "
+    "write scenarios and scripts. You remember the whole conversation history. "
+    "When the user asks for code, always write it in a fenced code block (```python ... ```). "
+    "Answer helpfully, concisely, in the language of the user. "
     "If you cannot help with the question, say so honestly and suggest contacting human support."
 )
 
@@ -26,20 +28,23 @@ def is_configured():
     return bool(config.LLM_API_KEY)
 
 
-def ask(prompt, lang):
+def ask(prompt, lang, history=None):
     if not is_configured():
         return None
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT + f" (Reply in {'Russian' if lang=='ru' else 'English'}.)"},
+    ]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": prompt})
     try:
         resp = requests.post(
             f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {config.LLM_API_KEY}"},
             json={
                 "model": config.LLM_MODEL,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT + f" (Reply in {'Russian' if lang=='ru' else 'English'}.)"},
-                    {"role": "user", "content": prompt},
-                ],
-                "max_tokens": 600,
+                "messages": messages,
+                "max_tokens": 1200,
             },
             timeout=45,
         )

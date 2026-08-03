@@ -24,7 +24,9 @@ def init_db():
                 first_name TEXT,
                 lang TEXT DEFAULT 'ru',
                 created_at TEXT,
-                is_banned INTEGER DEFAULT 0
+                is_banned INTEGER DEFAULT 0,
+                ai_requests INTEGER DEFAULT 0,
+                bonus_claimed INTEGER DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS subscriptions (
@@ -82,8 +84,23 @@ def init_db():
                 message_id INTEGER PRIMARY KEY,
                 user_id INTEGER
             );
+
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                role TEXT,
+                content TEXT,
+                created_at TEXT
+            );
             """
         )
+        for col, ddl in (
+            ("ai_requests", "ai_requests INTEGER DEFAULT 0"),
+            ("bonus_claimed", "bonus_claimed INTEGER DEFAULT 0"),
+        ):
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(users)")]
+            if col not in cols:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {ddl}")
         conn.commit()
         conn.close()
 
@@ -177,6 +194,60 @@ def revenue():
         n = conn.execute("SELECT COALESCE(SUM(price),0) FROM subscriptions").fetchone()[0]
         conn.close()
         return n
+
+
+# ---------- bonus (subscription gift) ----------
+
+def get_ai_requests(user_id):
+    row = get_user(user_id)
+    return row["ai_requests"] if row else 0
+
+
+def use_ai_request(user_id):
+    with _lock:
+        conn = get_conn()
+        conn.execute("UPDATE users SET ai_requests = MAX(ai_requests - 1, 0) WHERE user_id=?", (user_id,))
+        conn.commit()
+        conn.close()
+
+
+def claim_bonus(user_id):
+    with _lock:
+        conn = get_conn()
+        row = conn.execute("SELECT bonus_claimed FROM users WHERE user_id=?", (user_id,)).fetchone()
+        if not row or row["bonus_claimed"]:
+            conn.close()
+            return False
+        conn.execute(
+            "UPDATE users SET bonus_claimed=1, ai_requests = ai_requests + 7 WHERE user_id=?",
+            (user_id,),
+        )
+        conn.commit()
+        conn.close()
+        return True
+
+
+def grant_free_week(user_id):
+    with _lock:
+        conn = get_conn()
+        now = datetime.now()
+        row = conn.execute(
+            "SELECT expires_at FROM subscriptions WHERE user_id=? ORDER BY expires_at DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        if row and row["expires_at"] > now.isoformat():
+            base = datetime.fromisoformat(row["expires_at"])
+        else:
+            base = now
+        until = base + timedelta(days=7)
+        conn.execute(
+            "INSERT INTO subscriptions (user_id, plan, period, months, price, promo, purchased_at, expires_at) "
+            "VALUES (?, 'standard', 'bonus', 0, 0, 'bonus', ?, ?)",
+            (user_id, now.isoformat(), until.isoformat()),
+        )
+        conn.commit()
+        conn.close()
+        return until
 
 
 # ---------- promo codes ----------
@@ -418,3 +489,27 @@ def get_admin_reply_target(message_id):
         row = conn.execute("SELECT user_id FROM admin_replies WHERE message_id=?", (message_id,)).fetchone()
         conn.close()
         return row["user_id"] if row else None
+
+
+# ---------- chat history (AI memory) ----------
+
+def add_history(user_id, role, content):
+    with _lock:
+        conn = get_conn()
+        conn.execute(
+            "INSERT INTO chat_history (user_id, role, content, created_at) VALUES (?,?,?,?)",
+            (user_id, role, content, datetime.now().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+
+
+def get_history(user_id, limit=20):
+    with _lock:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT role, content FROM chat_history WHERE user_id=? ORDER BY id DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+        conn.close()
+        return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
