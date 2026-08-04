@@ -226,6 +226,76 @@ async def on_add_sponsor(message: Message, state: FSMContext):
     await state.clear()
 
 
+# ---------- grant subscription ----------
+
+@router.callback_query(F.data == "admin:grant")
+async def cb_grant(cq: CallbackQuery, state: FSMContext):
+    lang = get_lang(cq.from_user.id)
+    if not is_admin(cq.from_user.id):
+        await cq.answer(_("admin_not_allowed", lang))
+        return
+    await state.set_state(AdminStates.grant_user)
+    await cq.message.answer(_("admin_grant_user_ask", lang))
+    await cq.answer()
+
+
+@router.message(AdminStates.grant_user)
+async def on_grant_user(message: Message, state: FSMContext):
+    lang = get_lang(message.from_user.id)
+    if not is_admin(message.from_user.id):
+        await state.clear()
+        return
+    text = message.text.strip()
+    uid = None
+    if text.isdigit():
+        uid = int(text)
+    elif text.startswith("@"):
+        row = db.get_user_by_username(text[1:].lstrip("@"))
+        if row:
+            uid = row["user_id"]
+    if uid is None:
+        await message.answer(_("admin_grant_user_notfound", lang))
+        await state.clear()
+        return
+    await state.update_data(grant_uid=uid)
+    await state.set_state(AdminStates.grant_plan)
+    await message.answer(_("admin_grant_plan_ask", lang))
+
+
+@router.message(AdminStates.grant_plan)
+async def on_grant_plan(message: Message, state: FSMContext):
+    lang = get_lang(message.from_user.id)
+    if not is_admin(message.from_user.id):
+        await state.clear()
+        return
+    data = await state.get_data()
+    uid = data.get("grant_uid")
+    parts = message.text.strip().lower().split()
+    if len(parts) < 2:
+        await message.answer(_("admin_grant_plan_ask", lang))
+        return
+    plan, period = parts[0], parts[1]
+    if plan not in config.PRICING or period not in config.PRICING[plan]:
+        await message.answer(_("admin_grant_plan_ask", lang))
+        return
+    months = config.PERIOD_MONTHS[period]
+    until = db.add_subscription(uid, plan, period, months, 0, "admin_grant")
+    await message.answer(
+        _("admin_grant_ok", lang, uid=uid, plan=_(f"plan_{plan}", lang),
+          period=_(f"period_{period}", lang), until=until.strftime("%d.%m.%Y"))
+    )
+    try:
+        ulang = get_lang(uid)
+        await bot.send_message(
+            uid,
+            _("grant_notify", ulang, plan=_(f"plan_{plan}", ulang),
+              period=_(f"period_{period}", ulang), until=until.strftime("%d.%m.%Y")),
+        )
+    except Exception:
+        pass
+    await state.clear()
+
+
 # ---------- stats ----------
 
 @router.callback_query(F.data == "admin:stats")

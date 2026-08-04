@@ -92,6 +92,13 @@ def init_db():
                 content TEXT,
                 created_at TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS github_accounts (
+                user_id INTEGER PRIMARY KEY,
+                gh_username TEXT,
+                gh_token TEXT,
+                connected_at TEXT
+            );
             """
         )
         for col, ddl in (
@@ -111,6 +118,14 @@ def get_user(user_id):
     with _lock:
         conn = get_conn()
         row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
+        conn.close()
+        return row
+
+
+def get_user_by_username(username):
+    with _lock:
+        conn = get_conn()
+        row = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
         conn.close()
         return row
 
@@ -513,3 +528,35 @@ def get_history(user_id, limit=20):
         ).fetchall()
         conn.close()
         return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
+
+
+# ---------- GitHub OAuth ----------
+
+def save_github(user_id, gh_username, gh_token):
+    with _lock:
+        conn = get_conn()
+        conn.execute(
+            "INSERT INTO github_accounts (user_id, gh_username, gh_token, connected_at) VALUES (?,?,?,?) "
+            "ON CONFLICT(user_id) DO UPDATE SET gh_username=excluded.gh_username, gh_token=excluded.gh_token",
+            (user_id, gh_username, gh_token, datetime.now().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+
+
+def get_github(user_id):
+    with _lock:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT * FROM github_accounts WHERE user_id=?", (user_id,)
+        ).fetchone()
+        conn.close()
+        return row
+
+
+def disconnect_github(user_id):
+    with _lock:
+        conn = get_conn()
+        conn.execute("DELETE FROM github_accounts WHERE user_id=?", (user_id,))
+        conn.commit()
+        conn.close()

@@ -12,7 +12,7 @@ from aiogram.types import CallbackQuery, Message, FSInputFile
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from . import config, db
-from .handlers import shop, support, admin as admin_handlers, bonus, fallback
+from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers
 from .i18n import _
 from .images import generate_all
 from .keyboards import lang_kb, main_menu_kb, start_kb
@@ -25,6 +25,7 @@ dp.include_router(shop.router)
 dp.include_router(support.router)
 dp.include_router(bonus.router)
 dp.include_router(admin_handlers.router)
+dp.include_router(profile_handlers.router)
 dp.include_router(fallback.router)
 
 
@@ -132,6 +133,9 @@ async def auction_loop():
 async def main():
     dp.startup.register(on_startup)
     asyncio.get_running_loop().create_task(auction_loop())
+    if config.GITHUB_CLIENT_ID and config.GITHUB_CLIENT_SECRET:
+        from .oauth_server import run_oauth_server
+        asyncio.get_running_loop().create_task(run_oauth_server())
     await dp.start_polling(bot, skip_updates=True)
 
 

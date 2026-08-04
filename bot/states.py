@@ -7,6 +7,8 @@ class AdminStates(StatesGroup):
     broadcast = State()
     add_sponsor = State()
     add_auction = State()
+    grant_user = State()
+    grant_plan = State()
 
 
 class UserPromoStates(StatesGroup):

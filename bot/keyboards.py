@@ -27,6 +27,7 @@ def start_kb(lang):
          InlineKeyboardButton(text=_("btn_bonus", lang), callback_data="menu:bonus")],
         [InlineKeyboardButton(text=_("btn_auction", lang), callback_data="menu:auction"),
          InlineKeyboardButton(text=_("btn_sponsors", lang), callback_data="menu:sponsors")],
+        [InlineKeyboardButton(text=_("btn_profile", lang), callback_data="menu:profile")],
         [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:main")],
     ])
 
@@ -77,6 +78,16 @@ def admin_kb(lang):
          InlineKeyboardButton(text=_("btn_broadcast", lang), callback_data="admin:broadcast")],
         [InlineKeyboardButton(text=_("btn_add_sponsor", lang), callback_data="admin:addsponsor"),
          InlineKeyboardButton(text=_("btn_stats", lang), callback_data="admin:stats")],
+        [InlineKeyboardButton(text=_("btn_grant_sub", lang), callback_data="admin:grant")],
+    ])
+
+
+def profile_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=_("btn_my_files", lang), callback_data="menu:files"),
+         InlineKeyboardButton(text=_("btn_connect_gh", lang), callback_data="gh:connect")],
+        [InlineKeyboardButton(text=_("btn_disconnect_gh", lang), callback_data="gh:disconnect"),
+         InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:main")],
     ])
 
 

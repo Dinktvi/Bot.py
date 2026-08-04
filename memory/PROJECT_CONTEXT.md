@@ -44,13 +44,22 @@ Pro:
   - Add sponsors
 - AI assistant for user support: answers questions; if the AI can't handle it ("плохо"), escalate to admins
 - Complaint/support channel to admins
+- AI assistant creates scripts as files (data/scripts/script_<uid>_*.py) and sends them as documents;
+  does not repeat full code in follow-ups; helps with hosting deployment guides
+- Profile menu (main menu → Start → Profile): shows GitHub link status, script count, AI requests
+- GitHub OAuth connect/disconnect, My Files list (download/delete), push scripts to GitHub
+  (creates repo `my-bot-scripts`, uploads via GitHub Contents API, base64)
+- Admin "Grant subscription" (выдать подписку): by ID or @username, plan+period, notifies the user
 
 ## Tech decisions
 - Python 3.11 + aiogram 3.x
-- SQLite for persistence (users, subscriptions, codes, discounts, auction, sponsors, tickets)
+- SQLite for persistence (users, subscriptions, codes, discounts, auction, sponsors, tickets,
+  chat_history, github_accounts)
 - Telegram Stars payments via `send_invoice` with currency `XTR`
 - Images generated with Pillow (no external image APIs)
 - LLM for assistant must use `USER_LLM_API_KEY` / `USER_LLM_BASE_URL` / `USER_LLM_MODEL` env vars (user-provided key, NOT the agent environment key)
+- GitHub OAuth: aiohttp server (bot/oauth_server.py, port 8080), redirect URI must match
+  github.com/settings/developers OAuth App; preview URL changes per session → update .env + GitHub app
 
 ## Previous session note
 The user previously lost context ("потерял чат") — this file exists so the spec survives.

@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import datetime
 from html import escape
 from pathlib import Path
@@ -22,6 +23,8 @@ router = Router()
 
 BUY_HINT = "menu:buy"
 
+CODE_BLOCK_RE = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
+
 
 def get_lang(user_id):
     u = db.get_user(user_id)
@@ -35,6 +38,22 @@ def has_sub(user_id):
 async def _photo(name):
     p = Path(config.ASSETS_DIR) / name
     return FSInputFile(str(p)) if p.exists() else None
+
+
+def _split_code_blocks(text):
+    """Split assistant answer into (clean_text, list_of_code_blocks)."""
+    blocks = CODE_BLOCK_RE.findall(text)
+    if not blocks:
+        return text.strip(), []
+    clean = CODE_BLOCK_RE.sub("", text).strip()
+    return clean, [{"lang": lang or "py", "code": code} for lang, code in blocks]
+
+
+def _save_script(user_id, lang, code):
+    name = f"script_{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{lang or 'py'}"
+    path = Path(config.SCRIPTS_DIR) / name
+    path.write_text(code, encoding="utf-8")
+    return path, name
 
 
 # ---------- AI assistant ----------
@@ -83,10 +102,18 @@ async def assistant_message(message: Message):
     db.add_history(user_id, "assistant", answer)
     if not has_sub_flag:
         db.use_ai_request(user_id)
-    if llm.should_escalate(answer):
-        await message.answer(answer[:3500], reply_markup=escalate_kb(lang))
-    else:
-        await message.answer(answer[:3500], reply_markup=assistant_kb(lang))
+
+    clean, blocks = _split_code_blocks(answer)
+    for b in blocks:
+        path, name = _save_script(user_id, b["lang"], b["code"])
+        try:
+            await message.answer_document(FSInputFile(str(path)), caption=_("assistant_file_ready", lang, name=name))
+        except Exception as e:
+            print("[assistant] send file failed:", e)
+
+    reply_text = clean or _("assistant_file_only", lang)
+    kb = escalate_kb(lang) if llm.should_escalate(reply_text) else assistant_kb(lang)
+    await message.answer(reply_text[:3500], reply_markup=kb)
 
 
 @router.callback_query(F.data.startswith("escalate:"))
