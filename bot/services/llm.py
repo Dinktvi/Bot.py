@@ -1,3 +1,5 @@
+import time
+
 import requests
 
 from .. import config
@@ -47,24 +49,30 @@ def ask(prompt, lang, history=None):
     if history:
         messages.extend(history)
     messages.append({"role": "user", "content": prompt})
-    try:
-        resp = requests.post(
-            f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions",
-            headers={"Authorization": f"Bearer {config.LLM_API_KEY}"},
-            json={
-                "model": config.LLM_MODEL,
-                "messages": messages,
-                "max_tokens": 1200,
-            },
-            timeout=45,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        text = data["choices"][0]["message"]["content"].strip()
-        return text
-    except Exception as e:
-        print(f"[llm] error: {e}")
-        return None
+    last_err = None
+    for attempt in range(3):
+        try:
+            resp = requests.post(
+                f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions",
+                headers={"Authorization": f"Bearer {config.LLM_API_KEY}"},
+                json={
+                    "model": config.LLM_MODEL,
+                    "messages": messages,
+                    "max_tokens": 1200,
+                    "temperature": 0.7,
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            text = data["choices"][0]["message"]["content"].strip()
+            return text
+        except Exception as e:
+            last_err = e
+            print(f"[llm] attempt {attempt + 1} error: {e}")
+            time.sleep(1 + attempt)
+    print(f"[llm] giving up: {last_err}")
+    return None
 
 
 def should_escalate(answer):

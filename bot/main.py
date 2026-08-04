@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 from aiogram import Dispatcher, F
-from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message, FSInputFile
@@ -12,7 +11,7 @@ from aiogram.types import CallbackQuery, Message, FSInputFile
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from . import config, db
-from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers
+from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers, commands as commands_handlers
 from .i18n import _
 from .images import generate_all
 from .keyboards import lang_kb, main_menu_kb, start_kb
@@ -21,6 +20,7 @@ from .runtime import bot
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 dp = Dispatcher(storage=MemoryStorage())
+dp.include_router(commands_handlers.router)
 dp.include_router(shop.router)
 dp.include_router(support.router)
 dp.include_router(bonus.router)
@@ -29,21 +29,15 @@ dp.include_router(profile_handlers.router)
 dp.include_router(fallback.router)
 
 
+@dp.errors()
+async def on_error(event, update):
+    logging.exception("Update handler error: %s", event.exception)
+    return True
+
+
 async def get_lang(user_id):
     u = db.get_user(user_id)
     return u["lang"] if u else "ru"
-
-
-@dp.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
-    await state.clear()
-    user = message.from_user
-    db.upsert_user(user.id, user.username, user.first_name)
-    u = db.get_user(user.id)
-    if not u["lang"] or u["lang"] not in ("ru", "en"):
-        await message.answer(_("lang_choose", "ru"), reply_markup=lang_kb())
-        return
-    await show_main_menu(message, u["lang"])
 
 
 @dp.callback_query(F.data.startswith("lang:"))

@@ -32,9 +32,23 @@ async def show_profile(cq: CallbackQuery):
              gh=gh_line,
              files=len(files),
              requests=db.get_ai_requests(user_id))
-    await cq.message.delete()
+    try:
+        await cq.message.delete()
+    except Exception:
+        pass
     await cq.message.answer(text, reply_markup=profile_kb(lang))
     await cq.answer()
+
+
+async def profile_from_message(message, user_id, lang):
+    gh = db.get_github(user_id)
+    files = _files_for(user_id)
+    gh_line = f"@{gh['gh_username']}" if gh else _("profile_gh_none", lang)
+    text = _("profile_text", lang,
+             gh=gh_line,
+             files=len(files),
+             requests=db.get_ai_requests(user_id))
+    await message.answer(text, reply_markup=profile_kb(lang))
 
 
 @router.callback_query(F.data == "menu:profile")

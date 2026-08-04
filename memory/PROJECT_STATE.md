@@ -36,6 +36,15 @@ Telegram-бот-магазин подписок (оплата звёздами X
     https://8080-17abfedf7a4fb066.monkeycode-ai.live (callback: /github/callback)
   - ВАЖНО: URL preview может поменяться в новой сессии → обновить GITHUB_REDIRECT_URI в .env
     и в настройках GitHub OAuth App (github.com/settings/developers)
+- [x] FIX (2026-08-04): «работает раз через раз» — в shop.py:58 `_, plan, period = cq.data.split(":")`
+      перезаписывал импортированную функцию `_` строкой → TypeError после клика на тариф.
+      Переименовано в `_sep`.
+- [x] FIX (2026-08-04): команды из списка BotFather (/create, /my_bots, /plans, /suggest,
+      /language, /help, /console, /del_lot) теперь обрабатываются — новый роутер
+      `bot/handlers/commands.py`, подключён ПЕРВЫМ, сбрасывает FSM-состояние.
+      `/console` и `/del_lot` перенесены туда же (из admin.py убраны дубли).
+- [x] FIX (2026-08-04): ИИ-запросы — ретраи (3 попытки, backoff), timeout 60s,
+      temperature 0.7. Глобальный `@dp.errors()` логирует сбои и не роняет обработку.
 - [ ] Хостинг 24/7 НЕ развёрнут: фри Railway закончился; serv00.com (бесплатно, без карты,
       SSH+Python+crontab) — регистрация временно закрыта («server user limit reached»),
       скрипт готов: `deploy/serv00-deploy.sh`; нужно пробовать регистрироваться в след. дни

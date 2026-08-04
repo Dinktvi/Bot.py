@@ -58,25 +58,28 @@ def _save_script(user_id, lang, code):
 
 # ---------- AI assistant ----------
 
-async def start_assistant(cq: CallbackQuery, state: FSMContext):
-    lang = get_lang(cq.from_user.id)
-    if not has_sub(cq.from_user.id):
-        await cq.message.delete()
-        await cq.message.answer(_("assistant_need_sub", lang), reply_markup=main_menu_kb(lang))
-        await cq.answer()
+async def _enter_assistant(message: Message, state: FSMContext):
+    lang = get_lang(message.from_user.id)
+    if not has_sub(message.from_user.id):
+        await message.answer(_("assistant_need_sub", lang), reply_markup=main_menu_kb(lang))
         return
     if not llm.is_configured():
-        await cq.message.delete()
-        await cq.message.answer(_("assistant_no_key", lang), reply_markup=main_menu_kb(lang))
-        await cq.answer()
+        await message.answer(_("assistant_no_key", lang), reply_markup=main_menu_kb(lang))
         return
     await state.set_state(ChatStates.assistant)
-    await cq.message.delete()
     photo = await _photo("assistant.png")
     if photo:
-        await cq.message.answer_photo(photo, caption=_("assistant_start", lang), reply_markup=assistant_kb(lang))
+        await message.answer_photo(photo, caption=_("assistant_start", lang), reply_markup=assistant_kb(lang))
     else:
-        await cq.message.answer(_("assistant_start", lang), reply_markup=assistant_kb(lang))
+        await message.answer(_("assistant_start", lang), reply_markup=assistant_kb(lang))
+
+
+async def start_assistant(cq: CallbackQuery, state: FSMContext):
+    try:
+        await cq.message.delete()
+    except Exception:
+        pass
+    await _enter_assistant(cq.message, state)
     await cq.answer()
 
 

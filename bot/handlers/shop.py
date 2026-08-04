@@ -55,7 +55,7 @@ async def cb_plan(cq: CallbackQuery):
 @router.callback_query(F.data.startswith("period:"))
 async def cb_period(cq: CallbackQuery, state: FSMContext):
     lang = get_lang(cq.from_user.id)
-    _, plan, period = cq.data.split(":")
+    _sep, plan, period = cq.data.split(":")
     price = apply_discount(config.PRICING[plan][period])
     promo = (await state.get_data()).get("promo")
     discount = 0

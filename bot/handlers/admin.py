@@ -1,7 +1,6 @@
 import asyncio
 
 from aiogram import Router, F
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -21,15 +20,6 @@ def is_admin(user_id):
 def get_lang(user_id):
     u = db.get_user(user_id)
     return u["lang"] if u else "ru"
-
-
-@router.message(Command("console"))
-async def cmd_console(message: Message):
-    lang = get_lang(message.from_user.id)
-    if not is_admin(message.from_user.id):
-        await message.answer(_("admin_not_allowed", lang))
-        return
-    await message.answer(_("admin_panel", lang), reply_markup=admin_kb(lang))
 
 
 # ---------- promo code ----------
@@ -134,24 +124,6 @@ async def on_add_auction(message: Message, state: FSMContext):
     db.add_auction(title, desc, start)
     await message.answer(_("admin_auction_ok", lang))
     await state.clear()
-
-
-@router.message(Command("del_lot"))
-async def cmd_del_lot(message: Message):
-    lang = get_lang(message.from_user.id)
-    if not is_admin(message.from_user.id):
-        await message.answer(_("admin_not_allowed", lang))
-        return
-    parts = message.text.split()
-    if len(parts) < 2:
-        await message.answer(_("admin_auction_none", lang))
-        return
-    try:
-        lot_id = int(parts[1])
-    except ValueError:
-        return
-    db.del_auction(lot_id)
-    await message.answer("✅ Лот удалён.")
 
 
 # ---------- broadcast ----------
