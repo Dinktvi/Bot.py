@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-REPO_URL="https://github.com/Romsn-codes/Boot.py"
-BOT_DIR="$HOME/Boot.py"
+REPO_URL="https://github.com/Dinktvi/Bot.py"
+BOT_DIR="$HOME/Bot.py"
 
 cd "$HOME"
 

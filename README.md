@@ -78,6 +78,18 @@ bot/
 ## 24/7 хостинг (VPS)
 Эта среда не даёт гарантии круглосуточной работы (автозасыпание). Для настоящего 24/7 разверни на VPS одним из способов:
 
+### Railway (бесплатно ~$5 на 30 дней, без карты)
+1. https://railway.com → Sign up через GitHub
+2. New Project → Deploy from GitHub repo → выбрать `Dinktvi/Bot.py`
+3. В **Variables** добавить: `BOT_TOKEN`, `ADMIN_ID`, `USER_LLM_API_KEY`, `USER_LLM_BASE_URL`, `USER_LLM_MODEL`
+4. В **Volumes** подключить `/app/data` (папка `data`), чтобы БД и скрипты не стирались при редеплое.
+   Бот слушает `$PORT` (health-check), поэтому Railway считает его живым.
+
+> Подписки, промокоды и скрипты хранятся в SQLite (`data/bot.db`).
+> Путь к БД — абсолютный от корня проекта, поэтому при обновлении кода
+> и перезапуске подписки **не обнуляются**, пока папка `data` сохраняется
+> (volume на Railway / локальная папка на VPS).
+
 ### Docker
 ```bash
 # на VPS с установленным Docker
@@ -91,6 +103,16 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now tg-shop-bot
 # логи: journalctl -u tg-shop-bot -f
 ```
+
+### serv00.com (бесплатно, регистрация открывается волнами)
+```bash
+ssh <логин>@<хост>.serv00.net
+cd ~ && wget -qO- https://raw.githubusercontent.com/Dinktvi/Bot.py/master/deploy/serv00-deploy.sh | bash
+```
+
+## Выбор модели ИИ
+В меню ИИ-ассистента есть кнопка «Модель ИИ» — пользователь выбирает
+между Groq (Llama 3.3) и DeepSeek (если задан `DEEPSEEK_API_KEY`).
 
 ### Проверка после запуска
 - `/start` в боте → меню с картинкой

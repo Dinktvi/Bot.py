@@ -38,9 +38,16 @@ PLAN_NAMES = {"standard": "Обычный", "pro": "Про"}
 PERIOD_NAMES = {"1m": "1 месяц", "3m": "3 месяца", "6m": "6 месяцев", "12m": "12 месяцев"}
 PERIOD_MONTHS = {"1m": 1, "3m": 3, "6m": 6, "12m": 12}
 
-DB_PATH = os.getenv("DB_PATH", "data/bot.db")
-ASSETS_DIR = os.path.join(os.path.dirname(__file__), "..", "assets")
-SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "scripts")
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+def _resolve(path):
+    if os.path.isabs(path):
+        return path
+    return os.path.join(PROJECT_ROOT, path)
+
+DB_PATH = _resolve(os.getenv("DB_PATH", "data/bot.db"))
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
+SCRIPTS_DIR = os.path.join(PROJECT_ROOT, "data", "scripts")
 
 LLM_API_KEY = os.getenv("USER_LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("USER_LLM_BASE_URL", "https://api.deepseek.com/v1")
