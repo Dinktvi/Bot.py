@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -99,9 +100,31 @@ async def auction_loop():
             logging.warning("auction_loop error: %s", e)
 
 
+async def _health_server():
+    port = os.getenv("PORT")
+    if not port:
+        return
+    try:
+        from aiohttp import web
+    except ImportError:
+        return
+    app = web.Application()
+    async def _ok(_req):
+        return web.Response(text="ok")
+    app.router.add_get("/", _ok)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", int(port))
+    await site.start()
+    print(f"[health] server on :{port}")
+    while True:
+        await asyncio.sleep(3600)
+
+
 async def main():
     dp.startup.register(on_startup)
     asyncio.get_running_loop().create_task(auction_loop())
+    asyncio.get_running_loop().create_task(_health_server())
     if config.GITHUB_CLIENT_ID and config.GITHUB_CLIENT_SECRET:
         from .oauth_server import run_oauth_server
         asyncio.get_running_loop().create_task(run_oauth_server())
