@@ -48,17 +48,17 @@ def available_providers():
     return [pid for pid, p in config.AI_PROVIDERS.items() if p["api_key"]]
 
 
-def get_provider(provider):
-    p = config.AI_PROVIDERS.get(provider)
+def get_provider(provider=None):
+    p = config.AI_PROVIDERS.get(provider or config.DEFAULT_AI_PROVIDER)
     if p and p["api_key"]:
         return p
-    return config.AI_PROVIDERS[config.DEFAULT_AI_PROVIDER]
+    return config.AI_PROVIDERS["groq"]
 
 
-def ask(prompt, lang, history=None, provider=None):
+def ask(prompt, lang, history=None):
     if not is_configured():
         return None, 0.0
-    p = get_provider(provider or config.DEFAULT_AI_PROVIDER)
+    p = get_provider()
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT + f" (Reply in {'Russian' if lang=='ru' else 'English'}.)"},
     ]
