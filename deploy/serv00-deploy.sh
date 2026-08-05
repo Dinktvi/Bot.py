@@ -20,16 +20,38 @@ echo "==> Создаю виртуальное окружение..."
 if [ ! -d venv ]; then
   python3 -m venv venv
 fi
-./venv/bin/pip install -q --upgrade pip
-./venv/bin/pip install -q -r requirements.txt
+
+PY="$BOT_DIR/venv/bin/python3"
+if [ ! -x "$PY" ]; then
+  PY="$(command -v python3)"
+fi
+
+echo "==> Ставлю pip (если нужно)..."
+if ! "$PY" -m pip --version >/dev/null 2>&1; then
+  "$PY" -m ensurepip --upgrade 2>/dev/null || "$PY" -m pip install --upgrade pip 2>/dev/null || true
+fi
+
+echo "==> Ставлю зависимости..."
+"$PY" -m pip install -q --upgrade pip
+"$PY" -m pip install -q -r requirements.txt
 
 echo "==> Создаю папки..."
 mkdir -p data assets
 
 if [ ! -f .env ]; then
-  echo "==> !!! .env не найден. Создай его командой:"
-  echo "    nano $BOT_DIR/.env"
-  echo "    Затем скопируй содержимое из инструкции и запусти скрипт заново."
+  echo "==> !!! .env не найден."
+  echo ""
+  echo "    Создай его так:"
+  echo "    cd $BOT_DIR"
+  echo "    cp .env.example .env"
+  echo "    nano .env"
+  echo ""
+  echo "    Обязательно заполни:"
+  echo "      BOT_TOKEN=<токен из @BotFather>"
+  echo "      ADMIN_ID=<твой Telegram id>"
+  echo "      USER_LLM_API_KEY=<ключ ИИ>"
+  echo ""
+  echo "    Затем запусти скрипт заново: bash $0"
   exit 1
 fi
 
@@ -40,7 +62,7 @@ if [ -f bot.pid ]; then
 fi
 
 echo "==> Запускаю бота..."
-nohup ./venv/bin/python3 -m bot.main > bot.log 2>&1 &
+nohup "$PY" -m bot.main > bot.log 2>&1 &
 echo $! > bot.pid
 
 sleep 3
@@ -53,7 +75,7 @@ else
 fi
 
 echo "==> Настраиваю автозапуск через cron (проверка каждую минуту)..."
-CRON_LINE="* * * * * cd $BOT_DIR && if ! pgrep -f 'python3 -m bot.main' > /dev/null; then nohup ./venv/bin/python3 -m bot.main >> bot.log 2>&1 & echo \$! > bot.pid; fi"
+CRON_LINE="* * * * * cd $BOT_DIR && if ! pgrep -f 'bot.main' > /dev/null; then nohup $PY -m bot.main >> bot.log 2>&1 & echo \$! > bot.pid; fi"
 ( crontab -l 2>/dev/null | grep -v 'bot.main'; echo "$CRON_LINE" ) | crontab -
 
 echo "==> Готово. Бот будет жить 24/7."
