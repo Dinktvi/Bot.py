@@ -66,8 +66,20 @@ def escalate_kb(lang):
 
 def assistant_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=_("btn_model", lang), callback_data="model:choose")],
         [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:main")],
     ])
+
+
+def provider_kb(lang, current):
+    btns = []
+    for pid, p in config.AI_PROVIDERS.items():
+        if not p["api_key"]:
+            continue
+        mark = " ✅" if pid == current else ""
+        btns.append([InlineKeyboardButton(text=p["name"] + mark, callback_data=f"model:{pid}")])
+    btns.append([InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:assistant")])
+    return InlineKeyboardMarkup(inline_keyboard=btns)
 
 
 def admin_kb(lang):

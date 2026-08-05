@@ -6,7 +6,7 @@ from pathlib import Path
 from aiogram import Dispatcher, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import CallbackQuery, Message, FSInputFile
+from aiogram.types import CallbackQuery, Message, ErrorEvent
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -14,7 +14,8 @@ from . import config, db
 from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers, commands as commands_handlers
 from .i18n import _
 from .images import generate_all
-from .keyboards import lang_kb, main_menu_kb, start_kb
+from .keyboards import lang_kb, start_kb
+from .menu import get_lang, show_main_menu
 from .runtime import bot
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -30,14 +31,9 @@ dp.include_router(fallback.router)
 
 
 @dp.errors()
-async def on_error(event, update):
+async def on_error(event: ErrorEvent):
     logging.exception("Update handler error: %s", event.exception)
     return True
-
-
-async def get_lang(user_id):
-    u = db.get_user(user_id)
-    return u["lang"] if u else "ru"
 
 
 @dp.callback_query(F.data.startswith("lang:"))
@@ -50,33 +46,12 @@ async def on_lang(cq: CallbackQuery, state: FSMContext):
     await cq.answer()
 
 
-async def show_main_menu(message: Message, lang: str):
-    image_path = Path(config.ASSETS_DIR) / "main.png"
-    if not image_path.exists():
-        generate_all()
-    caption = _("welcome", lang, name=config.BOT_NAME)
-    try:
-        await message.answer_photo(
-            FSInputFile(str(image_path)),
-            caption=caption,
-            reply_markup=main_menu_kb(lang),
-        )
-    except Exception:
-        await message.answer(caption, reply_markup=main_menu_kb(lang))
-
-
 @dp.callback_query(F.data == "menu:main")
 async def cb_main(cq: CallbackQuery, state: FSMContext):
     await state.clear()
     lang = await get_lang(cq.from_user.id)
-    image_path = Path(config.ASSETS_DIR) / "main.png"
-    caption = _("welcome", lang, name=config.BOT_NAME)
     await cq.message.delete()
-    await cq.message.answer_photo(
-        FSInputFile(str(image_path)),
-        caption=caption,
-        reply_markup=main_menu_kb(lang),
-    )
+    await show_main_menu(cq.message, lang)
     await cq.answer()
 
 

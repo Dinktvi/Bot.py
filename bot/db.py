@@ -26,6 +26,7 @@ def init_db():
                 created_at TEXT,
                 is_banned INTEGER DEFAULT 0,
                 ai_requests INTEGER DEFAULT 0,
+                ai_provider TEXT DEFAULT '',
                 bonus_claimed INTEGER DEFAULT 0
             );
 
@@ -104,6 +105,7 @@ def init_db():
         for col, ddl in (
             ("ai_requests", "ai_requests INTEGER DEFAULT 0"),
             ("bonus_claimed", "bonus_claimed INTEGER DEFAULT 0"),
+            ("ai_provider", "ai_provider TEXT DEFAULT ''"),
         ):
             cols = [r[1] for r in conn.execute("PRAGMA table_info(users)")]
             if col not in cols:
@@ -147,6 +149,21 @@ def set_lang(user_id, lang):
     with _lock:
         conn = get_conn()
         conn.execute("UPDATE users SET lang=? WHERE user_id=?", (lang, user_id))
+        conn.commit()
+        conn.close()
+
+
+def get_ai_provider(user_id):
+    u = get_user(user_id)
+    if not u or not u["ai_provider"]:
+        return config.DEFAULT_AI_PROVIDER
+    return u["ai_provider"]
+
+
+def set_ai_provider(user_id, provider):
+    with _lock:
+        conn = get_conn()
+        conn.execute("UPDATE users SET ai_provider=? WHERE user_id=?", (provider, user_id))
         conn.commit()
         conn.close()
 

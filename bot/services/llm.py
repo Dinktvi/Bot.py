@@ -37,12 +37,24 @@ ESCALATION_MARKERS = [
 
 
 def is_configured():
-    return bool(config.LLM_API_KEY)
+    return any(p["api_key"] for p in config.AI_PROVIDERS.values())
 
 
-def ask(prompt, lang, history=None):
+def available_providers():
+    return [pid for pid, p in config.AI_PROVIDERS.items() if p["api_key"]]
+
+
+def get_provider(provider):
+    p = config.AI_PROVIDERS.get(provider)
+    if p and p["api_key"]:
+        return p
+    return config.AI_PROVIDERS[config.DEFAULT_AI_PROVIDER]
+
+
+def ask(prompt, lang, history=None, provider=None):
     if not is_configured():
         return None
+    p = get_provider(provider or config.DEFAULT_AI_PROVIDER)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT + f" (Reply in {'Russian' if lang=='ru' else 'English'}.)"},
     ]
@@ -53,10 +65,10 @@ def ask(prompt, lang, history=None):
     for attempt in range(3):
         try:
             resp = requests.post(
-                f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions",
-                headers={"Authorization": f"Bearer {config.LLM_API_KEY}"},
+                f"{p['base_url'].rstrip('/')}/chat/completions",
+                headers={"Authorization": f"Bearer {p['api_key']}"},
                 json={
-                    "model": config.LLM_MODEL,
+                    "model": p["model"],
                     "messages": messages,
                     "max_tokens": 1200,
                     "temperature": 0.7,
@@ -69,9 +81,9 @@ def ask(prompt, lang, history=None):
             return text
         except Exception as e:
             last_err = e
-            print(f"[llm] attempt {attempt + 1} error: {e}")
+            print(f"[llm:{p['model']}] attempt {attempt + 1} error: {e}")
             time.sleep(1 + attempt)
-    print(f"[llm] giving up: {last_err}")
+    print(f"[llm:{p['model']}] giving up: {last_err}")
     return None
 
 

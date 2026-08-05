@@ -46,6 +46,23 @@ LLM_API_KEY = os.getenv("USER_LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("USER_LLM_BASE_URL", "https://api.deepseek.com/v1")
 LLM_MODEL = os.getenv("USER_LLM_MODEL", "deepseek-chat")
 
+AI_PROVIDERS = {
+    "groq": {
+        "name": "Llama 3.3 (Groq)",
+        "api_key": os.getenv("GROQ_API_KEY", os.getenv("USER_LLM_API_KEY", "")),
+        "base_url": os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+        "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    },
+    "deepseek": {
+        "name": "DeepSeek Chat",
+        "api_key": os.getenv("DEEPSEEK_API_KEY", ""),
+        "base_url": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+        "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+    },
+}
+
+DEFAULT_AI_PROVIDER = os.getenv("DEFAULT_AI_PROVIDER", "groq")
+
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
 GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8080/github/callback")

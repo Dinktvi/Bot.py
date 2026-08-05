@@ -5,19 +5,13 @@ from aiogram.types import Message
 from .. import config, db
 from ..i18n import _
 from ..keyboards import lang_kb, admin_kb
+from ..menu import get_lang, show_main_menu
 
 router = Router()
 
 
-def get_lang(user_id):
-    u = db.get_user(user_id)
-    return u["lang"] if u else "ru"
-
-
 async def _show_main(message: Message, state: FSMContext):
     await state.clear()
-    from ..main import show_main_menu
-
     await show_main_menu(message, get_lang(message.from_user.id))
 
 
@@ -35,8 +29,6 @@ async def on_command(message: Message, state: FSMContext):
         if not u["lang"] or u["lang"] not in ("ru", "en"):
             await message.answer(_("lang_choose", "ru"), reply_markup=lang_kb())
         else:
-            from ..main import show_main_menu
-
             await show_main_menu(message, u["lang"])
         return
 

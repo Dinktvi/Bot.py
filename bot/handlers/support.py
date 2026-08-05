@@ -15,6 +15,7 @@ from ..keyboards import (
     assistant_kb,
     escalate_kb,
     main_menu_kb,
+    provider_kb,
 )
 from ..services import llm
 from ..runtime import bot
@@ -83,6 +84,28 @@ async def start_assistant(cq: CallbackQuery, state: FSMContext):
     await cq.answer()
 
 
+@router.callback_query(F.data.startswith("model:"))
+async def cb_model(cq: CallbackQuery):
+    lang = get_lang(cq.from_user.id)
+    uid = cq.from_user.id
+    choice = cq.data.split(":")[1]
+    if choice == "choose":
+        current = db.get_ai_provider(uid)
+        cur_name = config.AI_PROVIDERS[current]["name"] if current in config.AI_PROVIDERS else current
+        await cq.message.edit_text(
+            _("model_choose", lang, current=cur_name),
+            reply_markup=provider_kb(lang, current),
+        )
+    elif choice in config.AI_PROVIDERS:
+        db.set_ai_provider(uid, choice)
+        p = config.AI_PROVIDERS[choice]
+        await cq.message.edit_text(
+            _("model_set", lang, model=p["name"]),
+            reply_markup=assistant_kb(lang),
+        )
+    await cq.answer()
+
+
 @router.message(ChatStates.assistant)
 async def assistant_message(message: Message):
     lang = get_lang(message.from_user.id)
@@ -95,7 +118,8 @@ async def assistant_message(message: Message):
     user_text = message.text or ""
     thinking = await message.answer(_("assistant_thinking", lang))
     history = db.get_history(user_id)
-    answer = await asyncio.to_thread(llm.ask, user_text, lang, history)
+    provider = db.get_ai_provider(user_id)
+    answer = await asyncio.to_thread(llm.ask, user_text, lang, history, provider)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=assistant_kb(lang))
@@ -157,7 +181,8 @@ async def support_message(message: Message):
 
     thinking = await message.answer(_("assistant_thinking", lang))
     history = db.get_history(message.from_user.id)
-    answer = await asyncio.to_thread(llm.ask, message.text or "", lang, history)
+    provider = db.get_ai_provider(message.from_user.id)
+    answer = await asyncio.to_thread(llm.ask, message.text or "", lang, history, provider)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=main_menu_kb(lang))
