@@ -19,7 +19,11 @@ SYSTEM_PROMPT = (
     "a Telegram bot on Termux (Android), a VPS, Railway, Render, Oracle Cloud Free, serv00.com, "
     "or the user's own computer. Give concrete commands and config examples in code blocks.\n"
     "4. Answer helpfully, concisely, in the language of the user. "
-    "If you cannot help with the question, say so honestly and suggest contacting human support."
+    "If you cannot help with the question, say so honestly and suggest contacting human support.\n"
+    "5. Before your real answer write a short status line on its own line that describes "
+    "what you are doing right now and an estimate, e.g. "
+    "\"⚙️ Пишу готовый код бота... ~10 сек\" or \"⚙️ Объясняю шаги деплоя... ~5 сек\". "
+    "Then put the actual answer on the next lines. Do not invent exact timings, use a rough estimate."
 )
 
 ESCALATION_MARKERS = [
@@ -53,7 +57,7 @@ def get_provider(provider):
 
 def ask(prompt, lang, history=None, provider=None):
     if not is_configured():
-        return None
+        return None, 0.0
     p = get_provider(provider or config.DEFAULT_AI_PROVIDER)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT + f" (Reply in {'Russian' if lang=='ru' else 'English'}.)"},
@@ -62,6 +66,7 @@ def ask(prompt, lang, history=None, provider=None):
         messages.extend(history)
     messages.append({"role": "user", "content": prompt})
     last_err = None
+    t0 = time.time()
     for attempt in range(3):
         try:
             resp = requests.post(
@@ -78,13 +83,14 @@ def ask(prompt, lang, history=None, provider=None):
             resp.raise_for_status()
             data = resp.json()
             text = data["choices"][0]["message"]["content"].strip()
-            return text
+            elapsed = time.time() - t0
+            return text, elapsed
         except Exception as e:
             last_err = e
             print(f"[llm:{p['model']}] attempt {attempt + 1} error: {e}")
             time.sleep(1 + attempt)
     print(f"[llm:{p['model']}] giving up: {last_err}")
-    return None
+    return None, time.time() - t0
 
 
 def should_escalate(answer):

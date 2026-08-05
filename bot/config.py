@@ -66,6 +66,12 @@ AI_PROVIDERS = {
         "base_url": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
         "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
     },
+    "meta": {
+        "name": "Meta Llama",
+        "api_key": os.getenv("META_API_KEY", ""),
+        "base_url": os.getenv("META_BASE_URL", "https://api.deepinfra.com/v1/openai"),
+        "model": os.getenv("META_MODEL", "meta-llama/Meta-Llama-3.3-70B-Instruct"),
+    },
 }
 
 DEFAULT_AI_PROVIDER = os.getenv("DEFAULT_AI_PROVIDER", "groq")

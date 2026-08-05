@@ -119,12 +119,15 @@ async def assistant_message(message: Message):
     thinking = await message.answer(_("assistant_thinking", lang))
     history = db.get_history(user_id)
     provider = db.get_ai_provider(user_id)
-    answer = await asyncio.to_thread(llm.ask, user_text, lang, history, provider)
+    answer, elapsed = await asyncio.to_thread(llm.ask, user_text, lang, history, provider)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=assistant_kb(lang))
         return
-    await thinking.delete()
+    try:
+        await thinking.edit_text(_("assistant_done", lang, sec=round(elapsed)))
+    except Exception:
+        pass
     db.add_history(user_id, "user", user_text)
     db.add_history(user_id, "assistant", answer)
     if not has_sub_flag:
@@ -182,12 +185,15 @@ async def support_message(message: Message):
     thinking = await message.answer(_("assistant_thinking", lang))
     history = db.get_history(message.from_user.id)
     provider = db.get_ai_provider(message.from_user.id)
-    answer = await asyncio.to_thread(llm.ask, message.text or "", lang, history, provider)
+    answer, elapsed = await asyncio.to_thread(llm.ask, message.text or "", lang, history, provider)
     if answer is None:
         await thinking.delete()
         await message.answer(_("assistant_no_key", lang), reply_markup=main_menu_kb(lang))
         return
-    await thinking.delete()
+    try:
+        await thinking.edit_text(_("assistant_done", lang, sec=round(elapsed)))
+    except Exception:
+        pass
     db.add_history(message.from_user.id, "user", message.text or "")
     db.add_history(message.from_user.id, "assistant", answer)
     if llm.should_escalate(answer):

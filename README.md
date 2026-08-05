@@ -21,6 +21,8 @@
   BASE_URL `https://api.groq.com/openai/v1`, модель `llama-3.3-70b-versatile`
 - **DeepSeek — дёшево**: https://platform.deepseek.com → API Keys,
   BASE_URL `https://api.deepseek.com/v1`, модель `deepseek-chat`
+- **Meta Llama — бесплатно (DeepInfra)**: https://deepinfra.com → API Keys,
+  BASE_URL `https://api.deepinfra.com/v1/openai`, модель `meta-llama/Meta-Llama-3.3-70B-Instruct`
 - **Gemini — бесплатный тир**: https://aistudio.google.com → API Keys,
   BASE_URL `https://generativelanguage.googleapis.com/v1beta/openai`, модель `gemini-2.0-flash`
 
@@ -112,7 +114,11 @@ cd ~ && wget -qO- https://raw.githubusercontent.com/Dinktvi/Bot.py/master/deploy
 
 ## Выбор модели ИИ
 В меню ИИ-ассистента есть кнопка «Модель ИИ» — пользователь выбирает
-между Groq (Llama 3.3) и DeepSeek (если задан `DEEPSEEK_API_KEY`).
+между Groq (Llama 3.3), DeepSeek и Meta Llama (кнопки появляются только
+для тех провайдеров, у которых задан ключ в `.env`).
+
+ИИ перед ответом показывает, что именно делает (пишет код / объясняет) и
+примерное время; после ответа сообщает фактическое время выполнения.
 
 ### Проверка после запуска
 - `/start` в боте → меню с картинкой
