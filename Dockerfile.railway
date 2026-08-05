@@ -6,7 +6,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bot ./bot
-COPY images.toml . 2>/dev/null || true
 RUN mkdir -p assets data scripts
 
 ENV PYTHONPATH=/app
