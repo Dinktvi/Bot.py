@@ -50,7 +50,7 @@ async def on_lang(cq: CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "menu:main")
 async def cb_main(cq: CallbackQuery, state: FSMContext):
     await state.clear()
-    lang = await get_lang(cq.from_user.id)
+    lang = get_lang(cq.from_user.id)
     await cq.message.delete()
     await show_main_menu(cq.message, lang)
     await cq.answer()
@@ -58,7 +58,7 @@ async def cb_main(cq: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "menu:start")
 async def cb_start(cq: CallbackQuery):
-    lang = await get_lang(cq.from_user.id)
+    lang = get_lang(cq.from_user.id)
     await cq.message.delete()
     await cq.message.answer(_("start_menu", lang), reply_markup=start_kb(lang))
     await cq.answer()
