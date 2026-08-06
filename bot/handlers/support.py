@@ -58,9 +58,9 @@ def _save_script(user_id, lang, code):
 
 # ---------- AI assistant ----------
 
-async def _enter_assistant(message: Message, state: FSMContext):
-    lang = get_lang(message.from_user.id)
-    if not has_sub(message.from_user.id):
+async def _enter_assistant(message: Message, state: FSMContext, uid: int):
+    lang = get_lang(uid)
+    if not has_sub(uid):
         await message.answer(_("assistant_need_sub", lang), reply_markup=main_menu_kb(lang))
         return
     if not llm.is_configured():
@@ -79,7 +79,7 @@ async def start_assistant(cq: CallbackQuery, state: FSMContext):
         await cq.message.delete()
     except Exception:
         pass
-    await _enter_assistant(cq.message, state)
+    await _enter_assistant(cq.message, state, cq.from_user.id)
     await cq.answer()
 
 

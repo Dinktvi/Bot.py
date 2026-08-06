@@ -47,7 +47,7 @@ async def on_command(message: Message, state: FSMContext):
         await state.clear()
         from .support import _enter_assistant
 
-        await _enter_assistant(message, state)
+        await _enter_assistant(message, state, message.from_user.id)
         return
 
     if cmd == "/suggest":
