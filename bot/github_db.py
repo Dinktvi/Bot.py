@@ -69,6 +69,17 @@ def push():
             with open(tmp, "rb") as f:
                 content = f.read()
             os.remove(tmp)
+            if not _sha:
+                try:
+                    r = requests.get(
+                        f"https://api.github.com/repos/{_REPO}/contents/{_PATH}",
+                        headers=_headers(),
+                        timeout=30,
+                    )
+                    if r.status_code == 200:
+                        _sha = r.json().get("sha")
+                except Exception:
+                    pass
             body = {
                 "message": "chore: sync bot.db",
                 "content": base64.b64encode(content).decode(),
