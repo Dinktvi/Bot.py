@@ -536,7 +536,7 @@ def add_history(user_id, role, content):
         conn.close()
 
 
-def get_history(user_id, limit=20):
+def get_history(user_id, limit=50):
     with _lock:
         conn = get_conn()
         rows = conn.execute(

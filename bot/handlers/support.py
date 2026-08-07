@@ -76,7 +76,7 @@ async def _enter_assistant(message: Message, state: FSMContext, uid: int):
     history = db.get_history(uid)
     if history:
         lines = []
-        for item in history[-4:]:
+        for item in history[-8:]:
             role = "👤" if item["role"] == "user" else "🤖"
             text = (item["content"] or "")[:200].replace("\n", " ")
             lines.append(f"{role} {text}")
