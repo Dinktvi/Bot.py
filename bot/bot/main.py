@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from . import config, db
 from . import github_db
-from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers, commands as commands_handlers
+from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers, commands as commands_handlers, cloud as cloud_handlers
 from .i18n import _
 from .images import generate_all
 from .keyboards import lang_kb, start_kb
@@ -29,6 +29,7 @@ dp.include_router(admin_handlers.router)
 dp.include_router(support.router)
 dp.include_router(bonus.router)
 dp.include_router(profile_handlers.router)
+dp.include_router(cloud_handlers.router)
 dp.include_router(fallback.router)
 
 

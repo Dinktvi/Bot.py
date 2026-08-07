@@ -25,10 +25,40 @@ def start_kb(lang):
          InlineKeyboardButton(text=_("btn_ai_start", lang), callback_data="menu:assistant")],
         [InlineKeyboardButton(text=_("btn_my_sub", lang), callback_data="menu:mysub"),
          InlineKeyboardButton(text=_("btn_bonus", lang), callback_data="menu:bonus")],
-        [InlineKeyboardButton(text=_("btn_auction", lang), callback_data="menu:auction"),
-         InlineKeyboardButton(text=_("btn_sponsors", lang), callback_data="menu:sponsors")],
-        [InlineKeyboardButton(text=_("btn_profile", lang), callback_data="menu:profile")],
+        [InlineKeyboardButton(text=_("btn_cloud", lang), callback_data="menu:cloud"),
+         InlineKeyboardButton(text=_("btn_auction", lang), callback_data="menu:auction")],
+        [InlineKeyboardButton(text=_("btn_sponsors", lang), callback_data="menu:sponsors"),
+         InlineKeyboardButton(text=_("btn_profile", lang), callback_data="menu:profile")],
         [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:main")],
+    ])
+
+
+def cloud_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=_("btn_cloud_add", lang), callback_data="cloud:add")],
+        [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:start")],
+    ])
+
+
+def cloud_list_kb(lang, hosts):
+    rows = []
+    for h in hosts:
+        rows.append([InlineKeyboardButton(
+            text=f"🤖 {h['name'] or ('#' + str(h['id']))}",
+            callback_data=f"cloud:h:{h['id']}",
+        )])
+    rows.append([InlineKeyboardButton(text=_("btn_cloud_add", lang), callback_data="cloud:add")])
+    rows.append([InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:start")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def cloud_host_kb(lang, hid):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=_("btn_cloud_status", lang), callback_data=f"cloud:status:{hid}"),
+         InlineKeyboardButton(text=_("btn_cloud_restart", lang), callback_data=f"cloud:restart:{hid}")],
+        [InlineKeyboardButton(text=_("btn_cloud_logs", lang), callback_data=f"cloud:logs:{hid}"),
+         InlineKeyboardButton(text=_("btn_cloud_remove", lang), callback_data=f"cloud:remove:{hid}")],
+        [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:cloud")],
     ])
 
 

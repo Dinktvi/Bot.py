@@ -100,6 +100,19 @@ def init_db():
                 gh_token TEXT,
                 connected_at TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS cloud_hosts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                name TEXT,
+                ssh_host TEXT,
+                ssh_user TEXT,
+                ssh_pass TEXT,
+                repo_url TEXT,
+                bot_token TEXT,
+                dir_name TEXT,
+                created_at TEXT
+            );
             """
         )
         for col, ddl in (
@@ -583,5 +596,59 @@ def disconnect_github(user_id):
     with _lock:
         conn = get_conn()
         conn.execute("DELETE FROM github_accounts WHERE user_id=?", (user_id,))
+        conn.commit()
+        conn.close()
+
+
+# ---------- Cloud hosting ----------
+
+def add_cloud_host(user_id, name, ssh_host, ssh_user, ssh_pass, repo_url, bot_token):
+    with _lock:
+        conn = get_conn()
+        cur = conn.execute(
+            "INSERT INTO cloud_hosts (user_id, name, ssh_host, ssh_user, ssh_pass, repo_url, bot_token, dir_name, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                user_id,
+                name,
+                ssh_host,
+                ssh_user,
+                ssh_pass,
+                repo_url,
+                bot_token,
+                f"bot_{int(datetime.now().timestamp())}",
+                datetime.now().isoformat(),
+            ),
+        )
+        conn.commit()
+        hid = cur.lastrowid
+        conn.close()
+        return hid
+
+
+def get_cloud_hosts(user_id):
+    with _lock:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT * FROM cloud_hosts WHERE user_id=? ORDER BY id DESC", (user_id,)
+        ).fetchall()
+        conn.close()
+        return rows
+
+
+def get_cloud_host(hid):
+    with _lock:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT * FROM cloud_hosts WHERE id=?", (hid,)
+        ).fetchone()
+        conn.close()
+        return row
+
+
+def delete_cloud_host(hid):
+    with _lock:
+        conn = get_conn()
+        conn.execute("DELETE FROM cloud_hosts WHERE id=?", (hid,))
         conn.commit()
         conn.close()
