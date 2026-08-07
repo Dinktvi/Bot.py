@@ -25,9 +25,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(commands_handlers.router)
 dp.include_router(shop.router)
+dp.include_router(admin_handlers.router)
 dp.include_router(support.router)
 dp.include_router(bonus.router)
-dp.include_router(admin_handlers.router)
 dp.include_router(profile_handlers.router)
 dp.include_router(fallback.router)
 

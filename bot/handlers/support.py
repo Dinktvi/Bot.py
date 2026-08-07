@@ -293,7 +293,10 @@ async def on_idea(message: Message, state: FSMContext):
 
 
 @router.message(F.text.regexp(r"^\d+$"))
-async def auction_bid(message: Message):
+async def auction_bid(message: Message, state: FSMContext):
+    cur = await state.get_state()
+    if cur:
+        return
     lang = get_lang(message.from_user.id)
     lots = db.active_auctions()
     if not lots:
