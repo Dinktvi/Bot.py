@@ -66,6 +66,7 @@ def escalate_kb(lang):
 
 def assistant_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=_("btn_clear_dialog", lang), callback_data="dialog:clear")],
         [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:main")],
     ])
 

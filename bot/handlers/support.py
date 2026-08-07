@@ -68,10 +68,22 @@ async def _enter_assistant(message: Message, state: FSMContext, uid: int):
         return
     await state.set_state(ChatStates.assistant)
     photo = await _photo("assistant.png")
+    kb = assistant_kb(lang)
     if photo:
-        await message.answer_photo(photo, caption=_("assistant_start", lang), reply_markup=assistant_kb(lang))
+        await message.answer_photo(photo, caption=_("assistant_start", lang), reply_markup=kb)
     else:
-        await message.answer(_("assistant_start", lang), reply_markup=assistant_kb(lang))
+        await message.answer(_("assistant_start", lang), reply_markup=kb)
+    history = db.get_history(uid)
+    if history:
+        lines = []
+        for item in history[-4:]:
+            role = "👤" if item["role"] == "user" else "🤖"
+            text = (item["content"] or "")[:200].replace("\n", " ")
+            lines.append(f"{role} {text}")
+        await message.answer(
+            _("dialog_continue", lang, history="\n\n".join(lines)),
+            reply_markup=assistant_kb(lang),
+        )
 
 
 async def start_assistant(cq: CallbackQuery, state: FSMContext):
@@ -80,6 +92,18 @@ async def start_assistant(cq: CallbackQuery, state: FSMContext):
     except Exception:
         pass
     await _enter_assistant(cq.message, state, cq.from_user.id)
+    await cq.answer()
+
+
+@router.callback_query(F.data == "dialog:clear")
+async def cb_clear_dialog(cq: CallbackQuery, state: FSMContext):
+    lang = get_lang(cq.from_user.id)
+    db.clear_history(cq.from_user.id)
+    await state.set_state(ChatStates.assistant)
+    try:
+        await cq.message.edit_text(_("dialog_cleared", lang), reply_markup=assistant_kb(lang))
+    except Exception:
+        await cq.message.answer(_("dialog_cleared", lang), reply_markup=assistant_kb(lang))
     await cq.answer()
 
 

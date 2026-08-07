@@ -547,6 +547,14 @@ def get_history(user_id, limit=20):
         return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
 
 
+def clear_history(user_id):
+    with _lock:
+        conn = get_conn()
+        conn.execute("DELETE FROM chat_history WHERE user_id=?", (user_id,))
+        conn.commit()
+        conn.close()
+
+
 # ---------- GitHub OAuth ----------
 
 def save_github(user_id, gh_username, gh_token):
