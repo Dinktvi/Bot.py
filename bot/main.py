@@ -12,6 +12,7 @@ from aiogram.types import CallbackQuery, Message, ErrorEvent
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from . import config, db
+from . import github_db
 from .handlers import shop, support, admin as admin_handlers, bonus, fallback, profile as profile_handlers, commands as commands_handlers
 from .i18n import _
 from .images import generate_all
@@ -65,6 +66,7 @@ async def cb_start(cq: CallbackQuery):
 
 
 async def on_startup():
+    github_db.pull()
     db.init_db()
     generate_all()
     me = await bot.get_me()
@@ -125,6 +127,7 @@ async def main():
     dp.startup.register(on_startup)
     asyncio.get_running_loop().create_task(auction_loop())
     asyncio.get_running_loop().create_task(_health_server())
+    asyncio.get_running_loop().create_task(github_db.sync_loop())
     if config.GITHUB_CLIENT_ID and config.GITHUB_CLIENT_SECRET:
         from .oauth_server import run_oauth_server
         asyncio.get_running_loop().create_task(run_oauth_server())
