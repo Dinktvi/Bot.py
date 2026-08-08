@@ -67,7 +67,6 @@ async def cb_start(cq: CallbackQuery):
 
 
 async def on_startup():
-    github_db.pull()
     db.init_db()
     generate_all()
     me = await bot.get_me()
@@ -124,11 +123,33 @@ async def _health_server():
         await asyncio.sleep(3600)
 
 
+async def render_keepalive_loop():
+    """Ping deployed Render bots so the free tier never sleeps."""
+    await asyncio.sleep(15)
+    while True:
+        await asyncio.sleep(180)
+        try:
+            import requests as _requests
+
+            hosts = db.get_cloud_hosts_render()
+            for h in hosts:
+                url = h["service_url"]
+                if not url:
+                    continue
+                try:
+                    await asyncio.to_thread(_requests.get, url, timeout=10)
+                except Exception:
+                    pass
+        except Exception as e:
+            logging.warning("render_keepalive error: %s", e)
+
+
 async def main():
     dp.startup.register(on_startup)
     asyncio.get_running_loop().create_task(auction_loop())
     asyncio.get_running_loop().create_task(_health_server())
     asyncio.get_running_loop().create_task(github_db.sync_loop())
+    asyncio.get_running_loop().create_task(render_keepalive_loop())
     if config.GITHUB_CLIENT_ID and config.GITHUB_CLIENT_SECRET:
         from .oauth_server import run_oauth_server
         asyncio.get_running_loop().create_task(run_oauth_server())

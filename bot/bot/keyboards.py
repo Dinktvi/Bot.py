@@ -40,6 +40,14 @@ def cloud_kb(lang):
     ])
 
 
+def cloud_platform_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=_("btn_cloud_render", lang), callback_data="cloud:plat:render")],
+        [InlineKeyboardButton(text=_("btn_cloud_ssh", lang), callback_data="cloud:plat:ssh")],
+        [InlineKeyboardButton(text=_("btn_back", lang), callback_data="menu:cloud")],
+    ])
+
+
 def cloud_list_kb(lang, hosts):
     rows = []
     for h in hosts:

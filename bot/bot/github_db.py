@@ -31,6 +31,10 @@ def pull():
     if not _enabled():
         return
     global _sha
+    # Local DB is the source of truth. Only restore from backup when the
+    # local DB does not exist yet (first run on a fresh host / redeploy).
+    if os.path.exists(config.DB_PATH) and os.path.getsize(config.DB_PATH) > 0:
+        return
     try:
         r = requests.get(
             f"https://api.github.com/repos/{_REPO}/contents/{_PATH}",

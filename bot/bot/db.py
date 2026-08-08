@@ -105,11 +105,15 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 name TEXT,
+                platform TEXT DEFAULT 'ssh',
                 ssh_host TEXT,
                 ssh_user TEXT,
                 ssh_pass TEXT,
+                render_key TEXT DEFAULT '',
                 repo_url TEXT,
                 bot_token TEXT,
+                service_id TEXT DEFAULT '',
+                service_url TEXT DEFAULT '',
                 dir_name TEXT,
                 created_at TEXT
             );
@@ -123,6 +127,15 @@ def init_db():
             cols = [r[1] for r in conn.execute("PRAGMA table_info(users)")]
             if col not in cols:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {ddl}")
+        cloud_cols = [r[1] for r in conn.execute("PRAGMA table_info(cloud_hosts)")]
+        for col, ddl in (
+            ("platform", "platform TEXT DEFAULT 'ssh'"),
+            ("render_key", "render_key TEXT DEFAULT ''"),
+            ("service_id", "service_id TEXT DEFAULT ''"),
+            ("service_url", "service_url TEXT DEFAULT ''"),
+        ):
+            if col not in cloud_cols:
+                conn.execute(f"ALTER TABLE cloud_hosts ADD COLUMN {ddl}")
         conn.commit()
         conn.close()
 
@@ -602,20 +615,25 @@ def disconnect_github(user_id):
 
 # ---------- Cloud hosting ----------
 
-def add_cloud_host(user_id, name, ssh_host, ssh_user, ssh_pass, repo_url, bot_token):
+def add_cloud_host(user_id, name, platform="ssh", ssh_host="", ssh_user="", ssh_pass="",
+                   render_key="", repo_url="", bot_token="", service_id="", service_url=""):
     with _lock:
         conn = get_conn()
         cur = conn.execute(
-            "INSERT INTO cloud_hosts (user_id, name, ssh_host, ssh_user, ssh_pass, repo_url, bot_token, dir_name, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO cloud_hosts (user_id, name, platform, ssh_host, ssh_user, ssh_pass, render_key, repo_url, bot_token, service_id, service_url, dir_name, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 user_id,
                 name,
+                platform,
                 ssh_host,
                 ssh_user,
                 ssh_pass,
+                render_key,
                 repo_url,
                 bot_token,
+                service_id,
+                service_url,
                 f"bot_{int(datetime.now().timestamp())}",
                 datetime.now().isoformat(),
             ),
@@ -626,11 +644,39 @@ def add_cloud_host(user_id, name, ssh_host, ssh_user, ssh_pass, repo_url, bot_to
         return hid
 
 
+def update_cloud_service(hid, service_id=None, service_url=None):
+    sets, vals = [], []
+    if service_id is not None:
+        sets.append("service_id=?")
+        vals.append(service_id)
+    if service_url is not None:
+        sets.append("service_url=?")
+        vals.append(service_url)
+    if not sets:
+        return
+    vals.append(hid)
+    with _lock:
+        conn = get_conn()
+        conn.execute(f"UPDATE cloud_hosts SET {', '.join(sets)} WHERE id=?", vals)
+        conn.commit()
+        conn.close()
+
+
 def get_cloud_hosts(user_id):
     with _lock:
         conn = get_conn()
         rows = conn.execute(
             "SELECT * FROM cloud_hosts WHERE user_id=? ORDER BY id DESC", (user_id,)
+        ).fetchall()
+        conn.close()
+        return rows
+
+
+def get_cloud_hosts_render():
+    with _lock:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT * FROM cloud_hosts WHERE platform='render' AND service_url!=''"
         ).fetchall()
         conn.close()
         return rows
